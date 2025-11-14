@@ -1,5 +1,6 @@
 import csv
 import sys
+from utils import get_package_info, get_direct_dependencies
 
 # Определение ожидаемых параметров
 expected_keys = {
@@ -73,6 +74,26 @@ def main():
     print("Configuration loaded:")
     for key, value in config.items():
         print(f"{key}: {value}")
+
+    print("\nFetching dependencies...")
+
+    package_name = config['package_name']
+    version = config['version']
+    repo_url = config['repo_url']
+
+    package_info = get_package_info(package_name, version, repo_url)
+    if not package_info:
+        print("Could not fetch package info.")
+        sys.exit(1)
+
+    dependencies = get_direct_dependencies(package_info, version)
+
+    print("\nDirect dependencies:")
+    if dependencies:
+        for name, ver in dependencies.items():
+            print(f"- {name}: {ver}")
+    else:
+        print("No dependencies found.")
 
 if __name__ == "__main__":
     main()
