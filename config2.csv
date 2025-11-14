@@ -1,0 +1,8 @@
+key,value
+package_name,lodash
+repo_url,https://registry.npmjs.org/
+test_mode,false
+version,4.17.21
+output_image,lodash.png
+ascii_output,false
+max_depth,2

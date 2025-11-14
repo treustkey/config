@@ -1,6 +1,14 @@
 import csv
 import sys
-from utils import get_package_info, get_direct_dependencies, load_test_graph, topological_sort
+from utils import (
+    get_package_info,
+    get_direct_dependencies,
+    load_test_graph,
+    topological_sort,
+    generate_d2_graph,
+    save_d2_to_png,
+    print_ascii_tree
+)
 
 # Определение ожидаемых параметров
 expected_keys = {
@@ -123,6 +131,8 @@ def main():
     max_depth = config['max_depth']
     repo_url = config['repo_url']
     test_mode = config['test_mode']
+    output_image = config['output_image']
+    ascii_output = config['ascii_output']
 
     graph = build_dependency_graph(package_name, max_depth, repo_url, test_mode)
 
@@ -130,12 +140,23 @@ def main():
     for pkg, deps in sorted(graph.items()):
         print(f"{pkg} -> {deps}")
 
+    if ascii_output:
+        print("\nASCII Tree:")
+        print_ascii_tree(graph, package_name, max_depth)
+
     print("\nTopological order (loading order):")
     topo_order = topological_sort(graph)
     if topo_order:
         print(" -> ".join(topo_order))
     else:
         print("Cannot determine order due to cycles.")
+
+    print("\nGenerating D2 graph...")
+    d2_content = generate_d2_graph(graph)
+    print(d2_content)
+
+    print("\nSaving graph to PNG...")
+    save_d2_to_png(d2_content, output_image)
 
 if __name__ == "__main__":
     main()

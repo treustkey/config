@@ -3,6 +3,6 @@ package_name,A
 repo_url,./test_graph.csv
 test_mode,true
 version,1.0.0
-output_image,graph.png
-ascii_output,false
+output_image,graph_A.png
+ascii_output,true
 max_depth,3

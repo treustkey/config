@@ -1,0 +1,8 @@
+key,value
+package_name,express
+repo_url,https://registry.npmjs.org/
+test_mode,false
+version,4.18.2
+output_image,express.png
+ascii_output,false
+max_depth,2
