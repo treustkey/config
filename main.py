@@ -1,6 +1,6 @@
 import csv
 import sys
-from utils import get_package_info, get_direct_dependencies, load_test_graph
+from utils import get_package_info, get_direct_dependencies, load_test_graph, topological_sort
 
 # Определение ожидаемых параметров
 expected_keys = {
@@ -68,7 +68,7 @@ def load_config(file_path):
 def build_dependency_graph(start_package, max_depth, repo_url, test_mode):
     graph = {}
     visited = set()
-    stack = [(start_package, 0)]  # (package, depth)
+    stack = [(start_package, 0)]
 
     while stack:
         current_package, depth = stack.pop()
@@ -82,14 +82,12 @@ def build_dependency_graph(start_package, max_depth, repo_url, test_mode):
         visited.add(current_package)
 
         if test_mode:
-            # Загружаем тестовый граф
             test_graph = load_test_graph(repo_url)
             if not test_graph:
                 print("Could not load test graph.")
                 return {}
             deps = test_graph.get(current_package, [])
         else:
-            # Работаем с npm-реестром
             package_info = get_package_info(current_package, "latest", repo_url)
             if not package_info:
                 continue
@@ -101,6 +99,13 @@ def build_dependency_graph(start_package, max_depth, repo_url, test_mode):
         for dep in deps:
             if dep not in visited and depth < max_depth:
                 stack.append((dep, depth + 1))
+
+    # Заполняем отсутствующие узлы без зависимостей
+    all_nodes = set(graph.keys())
+    for pkg, deps in graph.items():
+        for d in deps:
+            if d not in all_nodes:
+                graph[d] = []
 
     return graph
 
@@ -121,9 +126,16 @@ def main():
 
     graph = build_dependency_graph(package_name, max_depth, repo_url, test_mode)
 
-    print("\nDependency graph:")
-    for pkg, deps in graph.items():
+    print("\nFull dependency graph (package -> [deps]):")
+    for pkg, deps in sorted(graph.items()):
         print(f"{pkg} -> {deps}")
+
+    print("\nTopological order (loading order):")
+    topo_order = topological_sort(graph)
+    if topo_order:
+        print(" -> ".join(topo_order))
+    else:
+        print("Cannot determine order due to cycles.")
 
 if __name__ == "__main__":
     main()
