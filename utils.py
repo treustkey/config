@@ -22,6 +22,20 @@ def get_package_info(package_name, version, repo_url):
 def get_direct_dependencies(package_info, version):
     versions = package_info.get("versions", {})
     target_version = versions.get(version, {})
-
     deps = target_version.get("dependencies", {})
     return deps
+
+def load_test_graph(file_path):
+    graph = {}
+    try:
+        with open(file_path, newline='', encoding='utf-8') as csvfile:
+            import csv
+            reader = csv.reader(csvfile)
+            for row in reader:
+                package = row[0].strip()
+                deps = [d.strip() for d in row[1:] if d.strip()]
+                graph[package] = deps
+    except FileNotFoundError:
+        print("Test graph file not found.")
+        return None
+    return graph

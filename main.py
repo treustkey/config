@@ -1,6 +1,6 @@
 import csv
 import sys
-from utils import get_package_info, get_direct_dependencies
+from utils import get_package_info, get_direct_dependencies, load_test_graph
 
 # Определение ожидаемых параметров
 expected_keys = {
@@ -43,7 +43,6 @@ def load_config(file_path):
                     print(f"Unknown key in config: {key}")
                     continue
 
-                # Преобразование значения в нужный тип
                 expected_type = expected_keys[key]
                 if expected_type == bool:
                     value = parse_bool(value)
@@ -59,13 +58,51 @@ def load_config(file_path):
         print(f"Error reading config: {e}")
         sys.exit(1)
 
-    # Проверка обязательных полей
     missing = [k for k in required_keys if k not in config]
     if missing:
         print(f"Missing required keys: {missing}")
         sys.exit(1)
 
     return config
+
+def build_dependency_graph(start_package, max_depth, repo_url, test_mode):
+    graph = {}
+    visited = set()
+    stack = [(start_package, 0)]  # (package, depth)
+
+    while stack:
+        current_package, depth = stack.pop()
+
+        if depth > max_depth:
+            continue
+
+        if current_package in visited:
+            continue
+
+        visited.add(current_package)
+
+        if test_mode:
+            # Загружаем тестовый граф
+            test_graph = load_test_graph(repo_url)
+            if not test_graph:
+                print("Could not load test graph.")
+                return {}
+            deps = test_graph.get(current_package, [])
+        else:
+            # Работаем с npm-реестром
+            package_info = get_package_info(current_package, "latest", repo_url)
+            if not package_info:
+                continue
+            deps = get_direct_dependencies(package_info, "latest")
+            deps = list(deps.keys())
+
+        graph[current_package] = deps
+
+        for dep in deps:
+            if dep not in visited and depth < max_depth:
+                stack.append((dep, depth + 1))
+
+    return graph
 
 def main():
     config_file = "config.csv"
@@ -75,25 +112,18 @@ def main():
     for key, value in config.items():
         print(f"{key}: {value}")
 
-    print("\nFetching dependencies...")
+    print("\nBuilding dependency graph...")
 
     package_name = config['package_name']
-    version = config['version']
+    max_depth = config['max_depth']
     repo_url = config['repo_url']
+    test_mode = config['test_mode']
 
-    package_info = get_package_info(package_name, version, repo_url)
-    if not package_info:
-        print("Could not fetch package info.")
-        sys.exit(1)
+    graph = build_dependency_graph(package_name, max_depth, repo_url, test_mode)
 
-    dependencies = get_direct_dependencies(package_info, version)
-
-    print("\nDirect dependencies:")
-    if dependencies:
-        for name, ver in dependencies.items():
-            print(f"- {name}: {ver}")
-    else:
-        print("No dependencies found.")
+    print("\nDependency graph:")
+    for pkg, deps in graph.items():
+        print(f"{pkg} -> {deps}")
 
 if __name__ == "__main__":
     main()

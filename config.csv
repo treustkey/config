@@ -1,8 +1,8 @@
 key,value
-package_name,lodash
-repo_url,https://registry.npmjs.org/
-test_mode,false
-version,4.17.21
+package_name,A
+repo_url,./test_graph.csv
+test_mode,true
+version,1.0.0
 output_image,graph.png
 ascii_output,false
 max_depth,3
